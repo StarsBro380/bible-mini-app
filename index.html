@@ -47,6 +47,11 @@
             text-align: center;
             padding: 40px;
         }
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -69,7 +74,8 @@
         const loadBtn = document.getElementById('load-chapter-btn');
         const contentDiv = document.getElementById('content');
 
-        const BIBLE_API_URL = 'https://raw.githubusercontent.com/StarsBro380/9bible/main/ru_synodal.json';
+        // ИСПРАВЛЕННАЯ ССЫЛКА - через CDN jsDelivr (работает стабильно)
+        const BIBLE_API_URL = 'https://cdn.jsdelivr.net/gh/shendlcode/9bible/ru_synodal.json';
 
         async function loadBibleData() {
             try {
@@ -79,7 +85,7 @@
                 bibleData = await response.json();
                 loadBooks();
             } catch (error) {
-                contentDiv.innerHTML = `<div class="loading">Ошибка: ${error.message}<br>Проверьте ссылку на файл JSON</div>`;
+                contentDiv.innerHTML = `<div class="error">Ошибка: ${error.message}<br><br>Попробуйте обновить страницу</div>`;
             }
         }
 
