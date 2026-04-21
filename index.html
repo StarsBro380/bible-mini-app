@@ -74,18 +74,44 @@
         const loadBtn = document.getElementById('load-chapter-btn');
         const contentDiv = document.getElementById('content');
 
-        const BIBLE_API_URL = 'https://gist.githubusercontent.com/b-ponomarenko/801df52e69424c39fdc7771c6edc9664/raw/5b0edf6d058a298ace2ec21173045b05ce5772e3/bible_synodal.json';
+        // Оригинальный URL с данными
+        const ORIGINAL_URL = 'https://gist.githubusercontent.com/b-ponomarenko/801df52e69424c39fdc7771c6edc9664/raw/5b0edf6d058a298ace2ec21173045b05ce5772e3/bible_synodal.json';
+        
+        // Используем прокси для обхода блокировок (несколько вариантов)
+        const PROXY_URLS = [
+            'https://cors-anywhere.herokuapp.com/',
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?'
+        ];
+        
+        let currentProxyIndex = 0;
+
+        async function fetchWithProxy(url) {
+            for (let i = 0; i < PROXY_URLS.length; i++) {
+                try {
+                    const proxyUrl = PROXY_URLS[i] + encodeURIComponent(url);
+                    console.log('Пробуем прокси:', PROXY_URLS[i]);
+                    const response = await fetch(proxyUrl);
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                } catch (e) {
+                    console.log('Прокси не работает:', e);
+                }
+            }
+            throw new Error('Все прокси недоступны');
+        }
 
         async function loadBibleData() {
             try {
-                contentDiv.innerHTML = '<div class="loading">Загрузка Библии...</div>';
-                const response = await fetch(BIBLE_API_URL);
-                if (!response.ok) throw new Error('Ошибка загрузки: ' + response.status);
-                const data = await response.json();
+                contentDiv.innerHTML = '<div class="loading">Загрузка Библии...<br>Пожалуйста, подождите</div>';
+                
+                // Пробуем через прокси
+                const data = await fetchWithProxy(ORIGINAL_URL);
                 bibleData = data.books;
                 loadBooks();
             } catch (error) {
-                contentDiv.innerHTML = '<div class="error">Ошибка: ' + error.message + '<br><br>Попробуйте обновить страницу</div>';
+                contentDiv.innerHTML = '<div class="error">Ошибка: не удалось загрузить данные<br><br>Попробуйте обновить страницу или проверьте интернет-соединение</div>';
             }
         }
 
