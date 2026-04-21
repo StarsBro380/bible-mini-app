@@ -74,23 +74,19 @@
         const loadBtn = document.getElementById('load-chapter-btn');
         const contentDiv = document.getElementById('content');
 
-        // Оригинальный URL с данными
         const ORIGINAL_URL = 'https://gist.githubusercontent.com/b-ponomarenko/801df52e69424c39fdc7771c6edc9664/raw/5b0edf6d058a298ace2ec21173045b05ce5772e3/bible_synodal.json';
         
-        // Используем прокси для обхода блокировок (несколько вариантов)
         const PROXY_URLS = [
             'https://cors-anywhere.herokuapp.com/',
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?'
         ];
-        
-        let currentProxyIndex = 0;
 
         async function fetchWithProxy(url) {
             for (let i = 0; i < PROXY_URLS.length; i++) {
                 try {
                     const proxyUrl = PROXY_URLS[i] + encodeURIComponent(url);
-                    console.log('Пробуем прокси:', PROXY_URLS[i]);
+                    console.log('Пробуем прокси:', proxyUrl);
                     const response = await fetch(proxyUrl);
                     if (response.ok) {
                         return await response.json();
@@ -105,13 +101,11 @@
         async function loadBibleData() {
             try {
                 contentDiv.innerHTML = '<div class="loading">Загрузка Библии...<br>Пожалуйста, подождите</div>';
-                
-                // Пробуем через прокси
                 const data = await fetchWithProxy(ORIGINAL_URL);
                 bibleData = data.books;
                 loadBooks();
             } catch (error) {
-                contentDiv.innerHTML = '<div class="error">Ошибка: не удалось загрузить данные<br><br>Попробуйте обновить страницу или проверьте интернет-соединение</div>';
+                contentDiv.innerHTML = '<div class="error">Ошибка: не удалось загрузить данные<br><br>Попробуйте обновить страницу</div>';
             }
         }
 
