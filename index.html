@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Библия Синодальный перевод</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 16px;
+            margin: 0;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        .verse {
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .verse-number {
+            font-weight: bold;
+            margin-right: 8px;
+            color: var(--tg-theme-hint-color, #6c6c70);
+        }
+        button, select, input {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        select, input {
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            border: 1px solid var(--tg-theme-hint-color, #6c6c70);
+        }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="nav">
+            <select id="book-select"></select>
+            <input type="number" id="chapter-input" value="1" min="1" style="width: 80px;">
+            <button id="load-chapter-btn">Читать</button>
+        </div>
+        <div id="content" class="loading">Загрузка Библии...</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let bibleData = [];
+        const bookSelect = document.getElementById('book-select');
+        const chapterInput = document.getElementById('chapter-input');
+        const loadBtn = document.getElementById('load-chapter-btn');
+        const contentDiv = document.getElementById('content');
+
+        const BIBLE_API_URL = 'https://raw.githubusercontent.com/StarsBro380/9bible/main/ru_synodal.json';
+
+        async function loadBibleData() {
+            try {
+                contentDiv.innerHTML = '<div class="loading">Загрузка Библии...</div>';
+                const response = await fetch(BIBLE_API_URL);
+                if (!response.ok) throw new Error('Не удалось загрузить данные');
+                bibleData = await response.json();
+                loadBooks();
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="loading">Ошибка: ${error.message}<br>Проверьте ссылку на файл JSON</div>`;
+            }
+        }
+
+        function loadBooks() {
+            bookSelect.innerHTML = '';
+            bibleData.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.book;
+                option.textContent = book.book;
+                bookSelect.appendChild(option);
+            });
+            if (bibleData.length > 0) {
+                updateMaxChapter();
+                loadChapter(bibleData[0].book, 1);
+            }
+        }
+
+        function updateMaxChapter() {
+            const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
+            const book = bibleData.find(b => b.book === selectedBook);
+            if (book) {
+                chapterInput.max = book.chapters.length;
+                if (parseInt(chapterInput.value) > book.chapters.length) {
+                    chapterInput.value = 1;
+                }
+            }
+        }
+
+        function loadChapter(bookName, chapterNumber) {
+            const book = bibleData.find(b => b.book === bookName);
+            if (!book) {
+                contentDiv.innerHTML = '<p>Книга не найдена</p>';
+                return;
+            }
+
+            const chapterIndex = chapterNumber - 1;
+            if (chapterIndex < 0 || chapterIndex >= book.chapters.length) {
+                contentDiv.innerHTML = '<p>Глава не найдена</p>';
+                return;
+            }
+
+            const chapter = book.chapters[chapterIndex];
+            let html = `<h2>${book.book}, глава ${chapterNumber}</h2>`;
+            chapter.forEach((verseText, index) => {
+                const verseNumber = index + 1;
+                html += `
+                    <div class="verse">
+                        <span class="verse-number">${verseNumber}</span>
+                        <span>${verseText}</span>
+                    </div>
+                `;
+            });
+            contentDiv.innerHTML = html;
+            
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        bookSelect.addEventListener('change', () => {
+            updateMaxChapter();
+            const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
+            loadChapter(selectedBook, 1);
+            chapterInput.value = 1;
+        });
+
+        loadBtn.addEventListener('click', () => {
+            const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
+            const chapter = parseInt(chapterInput.value);
+            if (selectedBook && !isNaN(chapter)) {
+                loadChapter(selectedBook, chapter);
+            }
+        });
+
+        chapterInput.addEventListener('change', () => {
+            const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
+            const chapter = parseInt(chapterInput.value);
+            if (selectedBook && !isNaN(chapter)) {
+                loadChapter(selectedBook, chapter);
+            }
+        });
+
+        loadBibleData();
+    </script>
+</body>
+</html>
