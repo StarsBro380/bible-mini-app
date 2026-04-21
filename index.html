@@ -74,18 +74,18 @@
         const loadBtn = document.getElementById('load-chapter-btn');
         const contentDiv = document.getElementById('content');
 
-        // ИСПРАВЛЕННАЯ ССЫЛКА - используем другой репозиторий с рабочим файлом
-        const BIBLE_API_URL = 'https://raw.githubusercontent.com/semenovtv/synodal-bible/main/ru_synodal.json';
+        const BIBLE_API_URL = 'https://gist.githubusercontent.com/b-ponomarenko/801df52e69424c39fdc7771c6edc9664/raw/5b0edf6d058a298ace2ec21173045b05ce5772e3/bible_synodal.json';
 
         async function loadBibleData() {
             try {
                 contentDiv.innerHTML = '<div class="loading">Загрузка Библии...</div>';
                 const response = await fetch(BIBLE_API_URL);
                 if (!response.ok) throw new Error('Ошибка загрузки: ' + response.status);
-                bibleData = await response.json();
+                const data = await response.json();
+                bibleData = data.books;
                 loadBooks();
             } catch (error) {
-                contentDiv.innerHTML = `<div class="error">Ошибка: ${error.message}<br><br>Проверьте соединение и попробуйте снова</div>`;
+                contentDiv.innerHTML = '<div class="error">Ошибка: ' + error.message + '<br><br>Попробуйте обновить страницу</div>';
             }
         }
 
@@ -93,19 +93,19 @@
             bookSelect.innerHTML = '';
             bibleData.forEach(book => {
                 const option = document.createElement('option');
-                option.value = book.book;
-                option.textContent = book.book;
+                option.value = book.title;
+                option.textContent = book.title;
                 bookSelect.appendChild(option);
             });
             if (bibleData.length > 0) {
                 updateMaxChapter();
-                loadChapter(bibleData[0].book, 1);
+                loadChapter(bibleData[0].title, 1);
             }
         }
 
         function updateMaxChapter() {
             const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
-            const book = bibleData.find(b => b.book === selectedBook);
+            const book = bibleData.find(b => b.title === selectedBook);
             if (book) {
                 chapterInput.max = book.chapters.length;
                 if (parseInt(chapterInput.value) > book.chapters.length) {
@@ -115,7 +115,7 @@
         }
 
         function loadChapter(bookName, chapterNumber) {
-            const book = bibleData.find(b => b.book === bookName);
+            const book = bibleData.find(b => b.title === bookName);
             if (!book) {
                 contentDiv.innerHTML = '<p>Книга не найдена</p>';
                 return;
@@ -128,15 +128,9 @@
             }
 
             const chapter = book.chapters[chapterIndex];
-            let html = `<h2>${book.book}, глава ${chapterNumber}</h2>`;
-            chapter.forEach((verseText, index) => {
-                const verseNumber = index + 1;
-                html += `
-                    <div class="verse">
-                        <span class="verse-number">${verseNumber}</span>
-                        <span>${verseText}</span>
-                    </div>
-                `;
+            let html = '<h2>' + book.title + ', глава ' + chapterNumber + '</h2>';
+            chapter.forEach(function(verse) {
+                html += '<div class="verse"><span class="verse-number">' + verse.verse + '</span><span>' + verse.text + '</span></div>';
             });
             contentDiv.innerHTML = html;
             
@@ -145,14 +139,14 @@
             }
         }
 
-        bookSelect.addEventListener('change', () => {
+        bookSelect.addEventListener('change', function() {
             updateMaxChapter();
             const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
             loadChapter(selectedBook, 1);
             chapterInput.value = 1;
         });
 
-        loadBtn.addEventListener('click', () => {
+        loadBtn.addEventListener('click', function() {
             const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
             const chapter = parseInt(chapterInput.value);
             if (selectedBook && !isNaN(chapter)) {
@@ -160,7 +154,7 @@
             }
         });
 
-        chapterInput.addEventListener('change', () => {
+        chapterInput.addEventListener('change', function() {
             const selectedBook = bookSelect.options[bookSelect.selectedIndex]?.value;
             const chapter = parseInt(chapterInput.value);
             if (selectedBook && !isNaN(chapter)) {
@@ -168,7 +162,6 @@
             }
         });
 
-        // Запуск загрузки данных
         loadBibleData();
     </script>
 </body>
